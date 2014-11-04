@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<settings>
+	<category label="General">
+		<setting label="URL" type="text" id="url_address" default="https://yts.re/api"/>
+		<setting label="Quality Movies" type="lsep"/>
+		<setting label="720p" type="bool" id="movie_q1" default="true"/>
+		<setting label="1080p" type="bool" id="movie_q2" default="false"/>
+		<setting label="3D" type="bool" id="movie_q3" default="false"/>
+	</category>
+</settings>
