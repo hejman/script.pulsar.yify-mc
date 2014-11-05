@@ -1,5 +1,6 @@
 from pulsar import provider
 import json
+import re
 
 # this read the settings
 url_address = provider.ADDON.getSetting('url_address')
@@ -15,22 +16,39 @@ movie_deny = []
 movie_allow.append('720p') if movie_q1 == 'true' else movie_deny.append('720p')
 movie_allow.append('1080p') if movie_q2 == 'true' else movie_deny.append('1080p')
 movie_allow.append('3D') if movie_q3 == 'true' else movie_deny.append('3D')
+movie_min_size = float(provider.ADDON.getSetting('movie_min_size'))
+movie_max_size = float(provider.ADDON.getSetting('movie_max_size'))
+max_size = 10.00 #10 it is not limit
+min_size = 0.00
 
-# function to validate
+# validate keywords
 def included(value, keys):
-    res = False
-    for item in keys:
-        if item in value:
-            res = True 
-            break
-    return res
+	value = value.replace('-',' ')
+	res = False
+	for item in keys:
+		if item.upper() in value.upper() and item != '':
+			res = True 
+			break
+	return res
+
+# validate size
+def size_clearance(size):
+	global max_size
+	max_size = 100 if max_size == 10 else max_size
+	res = False
+	value = float(re.split('\s', size)[0])
+	value *= 0.001 if 'M' in size else 1
+	print size, min_size, max_size
+	if min_size <= value and value <= max_size:
+		res = True
+	return res
 
 def extract_magnets_json(data):
 	if not ("No movies found" in data):
 		items= json.loads(data) # load the json
 		for movie in items['MovieList']:
 					resASCII =movie['Quality'].encode('utf-8')
-					if included(resASCII, movie_allow) and not included(resASCII, movie_deny):
+					if included(resASCII, movie_allow) and not included(resASCII, movie_deny) and size_clearance(movie['Size']):
 						name = movie['MovieTitle'] + ' - ' + movie['Size'] + ' - YIFY2 Provider'
 						yield {'name' : name,'uri' : movie['TorrentMagnetUrl'], 'info_hash' : movie['TorrentHash'], 'resolution' : values3[resASCII], 'Size' : int(movie['SizeByte'])}
 
@@ -38,6 +56,9 @@ def search(info):
 	return []
 
 def search_movie(info):
+	global min_size, max_size
+	min_size = movie_min_size
+	max_size = movie_max_size
 	provider.notify(message='Searching: ' + info['title'].upper()  + '...', header = None, time = 1500, image = icon)
 	url = str(url_address) + "/listimdb.json?imdb_id=" + info['imdb_id']
 	response = provider.GET(url)
