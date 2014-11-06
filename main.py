@@ -1,10 +1,10 @@
 from pulsar import provider
-import json
 import re
 
 # this read the settings
 url_address = provider.ADDON.getSetting('url_address')
 icon = provider.ADDON.getAddonInfo('icon') # gets icon
+name_provider = provider.ADDON.getAddonInfo('name') # gets name
 values3 = {'ALL': 0, 'HDTV': 1,'480p': 1,'DVD': 1,'720p': 2 ,'1080p': 3, '3D': 3, "1440p": 4 ,"2K": 5,"4K": 5} #code_resolution steeve
 
 #quality_movie
@@ -38,19 +38,20 @@ def size_clearance(size):
 	res = False
 	value = float(re.split('\s', size)[0])
 	value *= 0.001 if 'M' in size else 1
-	print size, min_size, max_size
 	if min_size <= value and value <= max_size:
 		res = True
 	return res
 
 def extract_magnets_json(data):
 	if not ("No movies found" in data):
-		items= json.loads(data) # load the json
+		items = provider.parse_json(data)
 		for movie in items['MovieList']:
 					resASCII =movie['Quality'].encode('utf-8')
+					name = movie['MovieTitle'] + ' - ' + movie['Size'] + ' - ' + name_provider
 					if included(resASCII, movie_allow) and not included(resASCII, movie_deny) and size_clearance(movie['Size']):
-						name = movie['MovieTitle'] + ' - ' + movie['Size'] + ' - YIFY2 Provider'
 						yield {'name' : name,'uri' : movie['TorrentMagnetUrl'], 'info_hash' : movie['TorrentHash'], 'resolution' : values3[resASCII], 'Size' : int(movie['SizeByte'])}
+					else:
+						provider.log.warning(name + '   ***Not Included for keyword filtering or size***')
 
 def search(info):
 	return []
