@@ -64,7 +64,7 @@ def search_movie(info):
 	global min_size, max_size
 	min_size = movie_min_size
 	max_size = movie_max_size
-	provider.notify(message='Searching: ' + info['title'].upper()  + '...', header = None, time = 1500, image = icon)
+	provider.notify(message='Searching: ' + info['title'].title()  + '...', header = None, time = 1500, image = icon)
 	url = str(url_address) + "/listimdb.json?imdb_id=" + info['imdb_id']
 	provider.log.info(url)
 	response = provider.GET(url)
