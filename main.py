@@ -26,7 +26,7 @@ def included(value, keys):
 	value = value.replace('-',' ')
 	res = False
 	for item in keys:
-		if item.upper() in value.upper() and item != '':
+		if item.upper() in value.upper():
 			res = True 
 			break
 	return res
@@ -44,6 +44,10 @@ def size_clearance(size):
 
 def extract_magnets_json(data):
 	if not ("No movies found" in data):
+		provider.log.info('Keywords allowed: ' + str(movie_allow))
+		provider.log.info('Keywords denied: ' + str(movie_deny))
+		provider.log.info('min Size: ' + str(min_size) + ' GB')
+		provider.log.info('max Size: ' + str(max_size)  + ' GB' if max_size != 10 else 'max Size: MAX')
 		items = provider.parse_json(data)
 		for movie in items['MovieList']:
 					resASCII =movie['Quality'].encode('utf-8')
@@ -62,6 +66,7 @@ def search_movie(info):
 	max_size = movie_max_size
 	provider.notify(message='Searching: ' + info['title'].upper()  + '...', header = None, time = 1500, image = icon)
 	url = str(url_address) + "/listimdb.json?imdb_id=" + info['imdb_id']
+	provider.log.info(url)
 	response = provider.GET(url)
 	return extract_magnets_json(response.data)
 
