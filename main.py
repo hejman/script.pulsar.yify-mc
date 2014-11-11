@@ -65,9 +65,9 @@ def search_movie(info):
 	min_size = movie_min_size
 	max_size = movie_max_size
 	provider.notify(message='Searching: ' + info['title'].title()  + '...', header = None, time = 1500, image = icon)
-	url = str(url_address) + "/listimdb.json?imdb_id=" + info['imdb_id']
-	provider.log.info(url)
-	response = provider.GET(url)
+	url_search = "%s/listimdb.json?imdb_id=%s" % (str(url_address), info['imdb_id'])
+	provider.log.info(url_search)
+	response = provider.GET(url_search)
 	return extract_magnets_json(response.data)
 
 def search_episode(info):
