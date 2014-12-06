@@ -1,78 +1,47 @@
 from pulsar import provider
 import re
+import common
 
 # this read the settings
-url_address = provider.ADDON.getSetting('url_address')
-icon = provider.ADDON.getAddonInfo('icon') # gets icon
-name_provider = provider.ADDON.getAddonInfo('name') # gets name
+settings = common.Settings()
+# create the filters
+filters = common.Filtering()
+
 values3 = {'ALL': 0, 'HDTV': 1,'480p': 1,'DVD': 1,'720p': 2 ,'1080p': 3, '3D': 3, "1440p": 4 ,"2K": 5,"4K": 5} #code_resolution steeve
 
-#quality_movie
-movie_q1 = provider.ADDON.getSetting('movie_q1') #720p
-movie_q2 = provider.ADDON.getSetting('movie_q2') #1080p
-movie_q3 = provider.ADDON.getSetting('movie_q3') #3D
-movie_allow = []
-movie_deny = [] 
-movie_allow.append('720p') if movie_q1 == 'true' else movie_deny.append('720p')
-movie_allow.append('1080p') if movie_q2 == 'true' else movie_deny.append('1080p')
-movie_allow.append('3D') if movie_q3 == 'true' else movie_deny.append('3D')
-movie_min_size = float(provider.ADDON.getSetting('movie_min_size'))
-movie_max_size = float(provider.ADDON.getSetting('movie_max_size'))
-max_size = 10.00 #10 it is not limit
-min_size = 0.00
-
-# validate keywords
-def included(value, keys):
-	value = value.replace('-',' ')
-	res = False
-	for item in keys:
-		if item.upper() in value.upper():
-			res = True 
-			break
-	return res
-
-# validate size
-def size_clearance(size):
-	global max_size
-	max_size = 100 if max_size == 10 else max_size
-	res = False
-	value = float(re.split('\s', size)[0])
-	value *= 0.001 if 'M' in size else 1
-	if min_size <= value and value <= max_size:
-		res = True
-	return res
 
 def extract_magnets_json(data):
-	if not ("No movies found" in data):
-		provider.log.info('Keywords allowed: ' + str(movie_allow))
-		provider.log.info('Keywords denied: ' + str(movie_deny))
-		provider.log.info('min Size: ' + str(min_size) + ' GB')
-		provider.log.info('max Size: ' + str(max_size)  + ' GB' if max_size != 10 else 'max Size: MAX')
-		items = provider.parse_json(data)
-		for movie in items['MovieList']:
-					resASCII =movie['Quality'].encode('utf-8')
-					name = movie['MovieTitle'] + ' - ' + movie['Size'] + ' - ' + name_provider
-					if included(resASCII, movie_allow) and not included(resASCII, movie_deny) and size_clearance(movie['Size']):
-						yield {'name' : name,'uri' : movie['TorrentMagnetUrl'], 'info_hash' : movie['TorrentHash'], 'resolution' : values3[resASCII], 'Size' : int(movie['SizeByte'])}
-					else:
-						provider.log.warning(name + '   ***Not Included for keyword filtering or size***')
+    results = []
+    if not ("No movies found" in data):
+        filters.information()
+        items = provider.parse_json(data)
+        for movie in items['MovieList']:
+            resASCII =movie['Quality'].encode('utf-8')
+            name = movie['MovieTitle'] + ' - ' + movie['Size'] + ' - ' + resASCII + ' - ' + settings.name_provider
+            filters.title = name
+            if filters.verify(name ,movie['Size']):
+                results.append({'name' : name,'uri' : movie['TorrentMagnetUrl'], 'info_hash' : movie['TorrentHash'], 'resolution' : values3[resASCII], 'Size' : int(movie['SizeByte'])})
+            else:
+                provider.log.warning(filters.reason)
+    return results
 
-def search(info):
-	return []
+
+def search(query):
+    return []
+
 
 def search_movie(info):
-	global min_size, max_size
-	min_size = movie_min_size
-	max_size = movie_max_size
-	provider.notify(message='Searching: ' + info['title'].title()  + '...', header = None, time = 1500, image = icon)
-	url_search = "%s/listimdb.json?imdb_id=%s" % (str(url_address), info['imdb_id'])
-	provider.log.info(url_search)
-	response = provider.GET(url_search)
-	return extract_magnets_json(response.data)
+    filters.use_movie()
+    if settings.time_noti > 0 : provider.notify(message='Searching: ' + info['title'].title()  + '...', header = None,
+                                                time = settings.time_noti, image = settings.icon)
+    url_search = "%s/listimdb.json?imdb_id=%s" % (settings.url, info['imdb_id'])
+    provider.log.info(url_search)
+    response = provider.GET(url_search)
+    return extract_magnets_json(response.data)
 
 def search_episode(info):
-	# just movies site
-	return []
+    # just movies site
+    return []
 
 # This registers your module for use
 provider.register(search, search_movie, search_episode)

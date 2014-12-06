@@ -1,20 +1,21 @@
-Version 1.98
-Bugfix
+Version 2.1.6
+Fixbug 
 
-Version 1.95
-Size restriction
+Version 2.1.5
+Sorted Code
 
-Version 1.90
+Version 2.1.0
 Optimisation
 
-Version 1.3
-Settings
+Version 2.0.3
+Fixbug
 
-Version 1.2
-Icon
+Version 2.0.2
+Fixbug
 
-Version 1.1
-Complete description information, name of provider in the results with the resolution.
+Version 2.0.1
+Update
 
-Version 1.0
-first version
+Version 2.0.0
+Pulsar 0.3 ready
+
