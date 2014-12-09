@@ -7,7 +7,7 @@ settings = common.Settings()
 # create the filters
 filters = common.Filtering()
 
-values3 = {'ALL': 0, 'HDTV': 1,'480p': 1,'DVD': 1,'720p': 2 ,'1080p': 3, '3D': 3, "1440p": 4 ,"2K": 5,"4K": 5} #code_resolution steeve
+values3 = {'ALL': 0, 'HDTV': 1, '480p': 1, 'DVD': 1, '720p': 2, '1080p': 3, '3D': 3, "1440p": 4, "2K": 5, "4K": 5}  # code_resolution steeve
 
 
 def extract_magnets_json(data):
@@ -20,7 +20,8 @@ def extract_magnets_json(data):
             name = movie['MovieTitle'] + ' - ' + movie['Size'] + ' - ' + resASCII + ' - ' + settings.name_provider
             filters.title = name
             if filters.verify(name ,movie['Size']):
-                results.append({'name' : name,'uri' : movie['TorrentMagnetUrl'], 'info_hash' : movie['TorrentHash'], 'resolution' : values3[resASCII], 'Size' : int(movie['SizeByte'])})
+                results.append({'name': name, 'uri': movie['TorrentMagnetUrl'], 'info_hash': movie['TorrentHash'],
+                                'resolution': values3[resASCII], 'Size': int(movie['SizeByte'])})
             else:
                 provider.log.warning(filters.reason)
     return results
@@ -32,12 +33,13 @@ def search(query):
 
 def search_movie(info):
     filters.use_movie()
-    if settings.time_noti > 0 : provider.notify(message='Searching: ' + info['title'].title()  + '...', header = None,
-                                                time = settings.time_noti, image = settings.icon)
+    if settings.time_noti > 0: provider.notify(message='Searching: ' + info['title'].title() + '...', header=None,
+                                               time=settings.time_noti, image=settings.icon)
     url_search = "%s/listimdb.json?imdb_id=%s" % (settings.url, info['imdb_id'])
     provider.log.info(url_search)
     response = provider.GET(url_search)
     return extract_magnets_json(response.data)
+
 
 def search_episode(info):
     # just movies site
