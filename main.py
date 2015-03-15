@@ -12,16 +12,18 @@ values3 = {'ALL': 0, 'HDTV': 1, '480p': 1, 'DVD': 1, '720p': 2, '1080p': 3, '3D'
 
 def extract_magnets_json(data):
     results = []
-    if not ("No movies found" in data):
+    items = provider.parse_json(data)
+    if items['data']['movie_count'] > 0:
         filters.information()
-        items = provider.parse_json(data)
-        for movie in items['MovieList']:
-            resASCII =movie['Quality'].encode('utf-8')
-            name = movie['MovieTitle'] + ' - ' + movie['Size'] + ' - ' + resASCII + ' - ' + settings.name_provider
-            filters.title = name
-            if filters.verify(name ,movie['Size']):
-                results.append({'name': name, 'uri': movie['TorrentMagnetUrl'], 'info_hash': movie['TorrentHash'],
-                                'resolution': values3[resASCII], 'Size': int(movie['SizeByte'])})
+        for movie in items['data']['movies'][0]['torrents']:
+            resASCII =movie['quality'].encode('utf-8')
+            name = movie['size'] + ' - ' + items['data']['movies'][0]['title'] + ' - ' + resASCII + ' - ' + settings.name_provider
+            filters.title = items['data']['movies'][0]['title']
+            if filters.verify(name ,movie['size']):
+                results.append({'name': name, 'uri': movie['url'], 'info_hash': movie['hash'],
+                                'resolution': values3[resASCII], 'Size': int(movie['size_bytes']),
+                                'seeds': movie['seeds'], 'peers': movie['peers'],
+                                "language": settings.language, "trackers": settings.trackers })
             else:
                 provider.log.warning(filters.reason)
     return results
@@ -33,9 +35,9 @@ def search(query):
 
 def search_movie(info):
     filters.use_movie()
-    if settings.time_noti > 0: provider.notify(message='Searching: ' + info['title'].title() + '...', header=None,
+    if settings.time_noti > 0: provider.notify(message='Searching: ' + info['title'].title().encode("utf-8") + '...', header=None,
                                                time=settings.time_noti, image=settings.icon)
-    url_search = "%s/listimdb.json?imdb_id=%s" % (settings.url, info['imdb_id'])
+    url_search = "%s/v2/list_movies.json?query_term=%s" % (settings.url, info['imdb_id'])
     provider.log.info(url_search)
     response = provider.GET(url_search)
     return extract_magnets_json(response.data)

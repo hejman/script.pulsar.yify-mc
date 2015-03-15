@@ -9,7 +9,20 @@
 		<setting label="1080p" type="labelenum" id="movie_qua4" values="Accept File|Block File|Filter Off" default="Accept File"/>
 		<setting label="3D" type="labelenum" id="movie_qua5" values="Accept File|Block File|Filter Off" default="Block File"/>
 		<setting label="Limitation Size Files" type="lsep"/>
-		<setting label="Minimum Size in GB (0 = Not Limit):" type="slider" id="movie_min_size" default="0" range="0,0.25,10" option="float" />
-		<setting label="Maximum Size in GB (10 = Not Limit):" type="slider" id="movie_max_size" default="10" range="0,0.25,10" option="float" />
+		<setting label="Minimum Size in GB (0 = Filter OFF):" type="slider" id="movie_min_size" default="0" range="0,0.25,10" option="float" />
+		<setting label="Maximum Size in GB (0 = Filter OFF):" type="slider" id="movie_max_size" default="10" range="0,0.25,10" option="float" />
+	</category>
+    <category label="Trackers">
+        <setting label="from http://trackon.moviesndroids.com" type="lsep"/>
+		<setting label="Tracker0:" type="text" id="trackers0" default="http://t2.pow7.com/announce" />
+		<setting label="Tracker1:" type="text" id="trackers1" default="http://announce.torrentsmd.com:8080/announce" />
+		<setting label="Tracker2:" type="text" id="trackers2" default="http://academic-p2p.carlosdelfino.eti.br/announce" />
+		<setting label="Tracker3:" type="text" id="trackers3" default="http://atrack.pow7.com/announce" />
+		<setting label="Tracker4:" type="text" id="trackers4" default="http://tracker.veryamt.com/announce" />
+		<setting label="Tracker5:" type="text" id="trackers5" default="http://torrent.gresille.org/announce" />
+		<setting label="Tracker6:" type="text" id="trackers6" default="http://sadnem.appspot.com/announce" />
+		<setting label="Tracker7:" type="text" id="trackers7" default="http://bt.eutorrents.com/announce.php" />
+		<setting label="Tracker8:" type="text" id="trackers8" default="http://tracker.kuaikuai.cn:8080/announce" />
+		<setting label="Tracker9:" type="text" id="trackers9" default="http://rsltrackeri.appspot.com/announce" />
 	</category>
 </settings>

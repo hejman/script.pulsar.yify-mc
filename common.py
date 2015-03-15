@@ -12,11 +12,25 @@ class Settings:
         self.url = self.settings.getSetting('url_address')
         self.icon = self.settings.getAddonInfo('icon')
         self.name_provider = self.settings.getAddonInfo('name')  # gets name
+        self.name_provider = re.sub('.COLOR (.*?)]', '', self.name_provider.replace('[/COLOR]', ''))
         self.language = self.settings.getSetting('language')
+        if self.language == '': self.language = 'en'
         self.extra = self.settings.getSetting('extra')
         self.time_noti = int(self.settings.getSetting('time_noti'))
+        self.IMDB_search = self.settings.getSetting('IMDB_search')
         max_magnets = self.settings.getSetting('max_magnets')
         self.max_magnets = int(max_magnets) if max_magnets is not '' else 10  # max_magnets
+        self.trackers = []
+        self.trackers.append(self.settings.getSetting('trackers0'))
+        self.trackers.append(self.settings.getSetting('trackers1'))
+        self.trackers.append(self.settings.getSetting('trackers2'))
+        self.trackers.append(self.settings.getSetting('trackers3'))
+        self.trackers.append(self.settings.getSetting('trackers4'))
+        self.trackers.append(self.settings.getSetting('trackers5'))
+        self.trackers.append(self.settings.getSetting('trackers6'))
+        self.trackers.append(self.settings.getSetting('trackers7'))
+        self.trackers.append(self.settings.getSetting('trackers8'))
+        self.trackers.append(self.settings.getSetting('trackers9'))
 
 
 class Browser:
@@ -31,7 +45,7 @@ class Browser:
         import urllib
         self._cookies = urllib.urlencode(payload)
 
-    def open(self,url):
+    def open(self, url='', language='en'):
         import urllib2
         result = True
         if self._cookies is not None:
@@ -40,6 +54,7 @@ class Browser:
         else:
             req = urllib2.Request(url)
         req.add_header('User-Agent','Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.71 Safari/537.36')
+        req.add_header('Content-Language', language)
         req.add_header("Accept-Encoding", "gzip")
         opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(self.cookies))#open cookie jar
         try:
@@ -77,6 +92,10 @@ class Filtering:
         self.settings = xbmcaddon.Addon()
         self.id_addon = self.settings.getAddonInfo('id')  # gets name
         self.name_provider = self.settings.getAddonInfo('name')  # gets name
+        self.time_noti = int(self.settings.getSetting('time_noti')) # time notification
+        self.icon = self.settings.getAddonInfo('icon')
+        self.name_provider = self.settings.getAddonInfo('name')  # gets name
+        self.name_provider = re.sub('.COLOR (.*?)]', '', self.name_provider.replace('[/COLOR]', ''))
         self.reason = ''
         self.title = ''
         self.quality_allow = ['*']
@@ -110,6 +129,7 @@ class Filtering:
         movie_qua5 = self.settings.getSetting('movie_qua5')  # 3D
         movie_qua6 = self.settings.getSetting('movie_qua6')  # CAM
         movie_qua7 = self.settings.getSetting('movie_qua7')  # TeleSync
+        movie_qua8 = self.settings.getSetting('movie_qua8')  # Trailer
         # Accept File
         movie_key_allowed = self.settings.getSetting('movie_key_allowed').replace(', ',',').replace(' ,',',')
         movie_allow = re.split(',',movie_key_allowed)
@@ -120,6 +140,7 @@ class Filtering:
         if movie_qua5 == 'Accept File': movie_allow.append('3D')
         if movie_qua6 == 'Accept File': movie_allow.append('CAM')
         if movie_qua7 == 'Accept File': movie_allow.extend(['TeleSync', ' TS '])
+        if movie_qua8 == 'Accept File': movie_allow.append('Trailer')
         #Block File
         movie_key_denied = self.settings.getSetting('movie_key_denied').replace(', ',',').replace(' ,',',')
         movie_deny = re.split(',',movie_key_denied)
@@ -130,6 +151,7 @@ class Filtering:
         if movie_qua5 == 'Block File': movie_deny.append('3D')
         if movie_qua6 == 'Block File': movie_deny.append('CAM')
         if movie_qua7 == 'Block File': movie_deny.extend(['TeleSync', '?TS?'])
+        if movie_qua8 == 'Block File': movie_deny.append('Trailer')
         if '' in movie_allow: movie_allow.remove('')
         if '' in movie_deny: movie_deny.remove('')
         if len(movie_allow)==0: movie_allow = ['*']
@@ -160,6 +182,24 @@ class Filtering:
         self.TV_allow = TV_allow
         self.TV_deny = TV_deny
 
+    def type_filtering(self, query, separator='%20'):
+        from xbmcgui import Dialog
+        from urllib import quote
+        if '#MOVIE&FILTER' in query:
+            self.use_movie()
+            query = query.replace('#MOVIE&FILTER', '')
+        elif '#TV&FILTER' in query:
+            self.use_TV()
+            query = query.replace('#TV&FILTER', '')
+            query = exception(query)  # CSI series problem
+        self.title = query  # to do filtering by name
+        if self.time_noti > 0:
+            dialog = Dialog()
+            dialog.notification(self.name_provider, query.title(), self.icon, self.time_noti)
+            del Dialog
+        query = quote(query.rstrip()).replace('%20', separator)
+        return query
+
     def use_movie(self):
         self.quality_allow = self.movie_allow
         self.quality_deny = self.movie_deny
@@ -178,18 +218,9 @@ class Filtering:
         xbmc.log('[%s] min Size: %s' % (self.id_addon, str(self.min_size) + ' GB'))
         xbmc.log('[%s] max Size: %s' % (self.id_addon, (str(self.max_size)  + ' GB') if self.max_size != 10 else 'MAX'))
 
-    #normalize
-    def normalize(self, word):
-        value = ''
-        for a in word:
-            if ord(a) < 128:
-                value += chr(ord(a))
-        value = value.replace('-', ' ').replace('&ntilde;', '')
-        return value
-
     # validate keywords
-    def included(self, value, keys):
-        value = self.normalize(value)
+    def included(self, value, keys, strict=False):
+        value = ' ' + value + ' '
         res = False
         if '*' in keys:
             res = True
@@ -198,8 +229,8 @@ class Filtering:
             for key in keys:
                 res2 = []
                 for item in re.split('\s', key):
-                    item = self.normalize(item)
                     item = item.replace('?', ' ')
+                    if strict: item = ' ' + item + ' '  # it makes that strict the comparation
                     if item.upper() in value.upper():
                         res2.append(True)
                     else:
@@ -218,10 +249,28 @@ class Filtering:
             res = True
         return res
 
+    def uncode_name(self, name):  # convert all the &# codes to char, remove extra-space and normalize
+        from HTMLParser import HTMLParser
+
+        name = name.replace('<![CDATA[', '').replace(']]', '')
+        name = HTMLParser().unescape(name.lower())
+        return name
+
+    def safe_name(self, value):  # make the name directory and filename safe
+        value = self.uncode_name(value)
+        keys = {'"': ' ', '*': ' ', '/': ' ', ':': ' ', '<': ' ', '>': ' ', '?': ' ', '|': ' ',
+                '(': ' ', ')': ' ', '[': ' ', ']': ' ', '_': ' ', '.': ' '}
+        for key in keys.keys():
+            value = value.replace(key, keys[key])
+        value = ' '.join(value.split())
+        return value
+
     # verify
     def verify(self, name, size):
-        self.reason = name.replace(' - ' + self.name_provider, ' ***Blocked File by')
-        if self.included(name, [self.title.replace('.', ' ')]):
+        name = self.safe_name(name)
+        self.title = self.safe_name(self.title)
+        self.reason = name.replace(' - ' + self.name_provider, '') + ' ***Blocked File by'
+        if self.included(name, [self.title], True):
             result = True
             if name != None:
                 if not self.included(name, self.quality_allow) or self.included(name, self.quality_deny):
@@ -248,21 +297,64 @@ def clean_html(data):
 
 # find the name in different language
 def translator(imdb_id, language):
-    import unicodedata
     import json
     browser1 = Browser()
+    keywords = {'en': '', 'de': '', 'es': 'espa', 'fr': 'french', 'it': 'italian', 'pt': 'portug'}
     url_themoviedb = "http://api.themoviedb.org/3/find/%s?api_key=8d0e4dca86c779f4157fc2c469c372ca&language=%s&external_source=imdb_id" % (imdb_id, language)
     if browser1.open(url_themoviedb):
         movie = json.loads(browser1.content)
-        title0 = movie['movie_results'][0]['title'].replace(u'\xf1', '*')
-        title_normalize = unicodedata.normalize('NFKD', title0)
-        title = title_normalize.encode('ascii', 'ignore').replace(':', '')
-        title = title.decode('utf-8').replace('*', u'\xf1').encode('utf-8')
+        title = movie['movie_results'][0]['title'].encode('utf-8')
+        original_title = movie['movie_results'][0]['original_title'].encode('utf-8')
+        if title == original_title:
+            title += ' ' + keywords[language]
     else:
         title = 'Pas de communication avec le themoviedb.org'
+    return title.rstrip()
+
+
+def exception(title):
+    title = title.lower()
+    if title == 'csi crime scene investigation':
+        title = 'CSI'
     return title
 
-def clean(title):
-    title = title.replace('s h i e l d', 's.h.i.e.l.d')
-    title = title.replace(' s ', 's ')
-    return title
+
+def size_int(size_txt):
+    size_txt = size_txt.upper()
+    size1 = size_txt.replace('B','').replace('I', '').replace('K','').replace('M','').replace('G','')
+    size = float(size1)
+    if 'K' in size_txt:
+        size *= 1000
+    if 'M' in size_txt:
+        size *= 1000000
+    if 'G' in size_txt:
+        size *= 1e9
+    return int(size)
+
+
+class Magnet():
+    def __init__(self, magnet):
+        self.magnet = magnet + '&'
+        # hash
+        hash = re.search('urn:btih:(.*?)&', self.magnet)
+        result = ''
+        if hash is not None:
+            result = hash.group(1)
+        self.hash = result
+        # name
+        name = re.search('dn=(.*?)&', self.magnet)
+        result = ''
+        if name is not None:
+                result= name.group(1).replace('+',' ')
+        self.name = result.title()
+        # trackers
+        self.trackers = re.findall('tr=(.*?)&', self.magnet)
+
+
+def IMDB_title(IMDB_id):
+    browser = Browser()
+    result = ''
+    if browser.open('http://www.omdbapi.com/?i=%s&r=json' % IMDB_id):
+        data = browser.content.replace('"', '').replace('{', '').replace('}', '').split(',')
+        result = data[0].split(":")[1] + ' ' + data[1].split(":")[1]
+    return result
