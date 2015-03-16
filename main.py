@@ -20,10 +20,7 @@ def extract_magnets_json(data):
             name = movie['size'] + ' - ' + items['data']['movies'][0]['title'] + ' - ' + resASCII + ' - ' + settings.name_provider
             filters.title = items['data']['movies'][0]['title']
             if filters.verify(name ,movie['size']):
-                results.append({'name': name, 'uri': movie['url'], 'info_hash': movie['hash'],
-                                'resolution': values3[resASCII], 'Size': int(movie['size_bytes']),
-                                'seeds': movie['seeds'], 'peers': movie['peers'],
-                                "language": settings.language, "trackers": settings.trackers })
+                results.append({'name': name, 'uri': movie['url'], 'info_hash': movie['hash']})
             else:
                 provider.log.warning(filters.reason)
     return results
